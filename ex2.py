@@ -76,19 +76,22 @@ class Ex2:
         print("Expected gradients:")
         print("[0.043 2.566 2.647]")
 
-    def gradient(self, theta, X, y):
+    @staticmethod
+    def gradient(theta, X, y):
         m = len(y)
         h_x = sigmoid(X @ theta)
         grad = 1/m * X.T @ (h_x - y)
         return grad.flatten()
 
-    def cost_function(self, theta, X, y):
+    @staticmethod
+    def cost_function(theta, X, y):
         m = len(y)
         h_x = sigmoid(X @ theta)
         J = 1/m * np.sum(-y.T @ np.log(h_x) - (1 - y.T) @ np.log(1 - h_x))
         return J
 
     @print_name
+    # @pause_after
     def optimizing(self):
         # Init theta
         self.theta = np.zeros((self.n + 1, 1))
@@ -129,6 +132,7 @@ class Ex2:
         fig.savefig("ex2-data/decision_boundry.png")
 
     @print_name
+    # @pause_after
     def predict_and_accuracy(self):
         prob = sigmoid(np.array([1, 45, 85]) @ self.theta)
         print("For a student with scores 45 and 85, we predict and admission probability of {:.4f}".format(prob))
@@ -138,7 +142,8 @@ class Ex2:
         print("Train Accuracy: {:.4f}".format(accuracy))
         print("Expected accuracy (approx): 0.89")
 
-    def predict(self, theta, X):
+    @staticmethod
+    def predict(theta, X):
         return np.round(sigmoid(X @ theta))
 
 
