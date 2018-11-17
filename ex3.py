@@ -26,15 +26,6 @@ class Ex3:
         self.alpha = None # Alpha parameter
         self.J_history = None # Cost function history
 
-        # Init
-
-        # self.data = pd.read_csv("ex2reg-data/ex2data2.txt", header=None)
-        # self.X = self.data.iloc[:, :-1]
-        # self.y = self.data.iloc[:, -1][:, np.newaxis]
-        # self.m, self.n = self.X.shape
-        # ones = np.ones((self.m, 1))
-        # self.X = np.hstack((ones, self.X))
-
     def run(self):
         self.loading_and_visualizing_data()
         self.vectorize_logistic_regression()
@@ -97,7 +88,7 @@ class Ex3:
                            method=solver,
                            options=options)
             all_theta[c - 1] = res.x
-            print("Class {} cost: {:.4f}".format(c, res.fun))
+            print("Class {:2.0f} cost: {:.4f}".format(c, res.fun))
         return all_theta
 
     @staticmethod
