@@ -51,7 +51,7 @@ class Ex3:
     # @pause_after
     def vectorize_logistic_regression(self):
         theta_t = np.reshape([-2, -1, 1, 2], (-1, 1))
-        X_t = np.hstack((np.ones((5, 1)), np.arange(1, 16).reshape(5,3, order='F') / 10))
+        X_t = np.hstack((np.ones((5, 1)), np.arange(1, 16).reshape(5, 3, order='F') / 10))
         y_t = np.reshape([1, 0, 1, 0, 1], (-1, 1))
         l_t = 3
         cost = Ex2Reg.cost_function_reg(theta_t, X_t, y_t, l_t)[0,0]
