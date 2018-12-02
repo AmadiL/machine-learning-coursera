@@ -248,7 +248,7 @@ class Ex4:
         h2 = sigmoid(np.hstack((np.ones((m, 1)), h1)) @ theta2.T)
         return np.argmax(h2, axis=1) + 1
 
-    def display_data(self, X, example_width=None):
+    def display_data(self, X):
         a = 5  # number of images on one row/column
         p = 20  # number of pixels in image row/column
         sample_matrix = np.vstack(np.hsplit(X.reshape(-1, p).T, a))
