@@ -19,6 +19,9 @@ class Ex5:
         self.y = None # y vector
         self.yval = None # y cross-validation vector
         self.ytest = None # y test vector
+        self.X_poly = None # X matrix with polynomial features
+        self.X_poly_test = None # X test matrix with polynomial features
+        self.X_poly_val = None # X cross-validation matrix with polynomial features
         self.hidden_layer_size = None # Number of nodes in hidden layer
         self.input_layer_size = None # Number of nodes in input layer
         self.m = None # Number of training examples
@@ -44,6 +47,8 @@ class Ex5:
         self.train_linear_regression()
         self.learning_curve_for_linear_regression()
         self.feature_mapping_and_polynomial_regression()
+        self.learning_curve_for_polynomial_regression()
+        self.validation_for_selecting_lambda()
 
     @print_name
     # @pause_after
@@ -81,7 +86,7 @@ class Ex5:
         cost = (err.T @ err + reg * (theta[1:].T @ theta[1:])) / (2 * m)
 
         grad = X.T @ err / m
-        grad[1:] += theta[1:] * reg / m
+        grad[1:] += (theta[1:] * reg / m).reshape((-1, 1))
 
         return cost[0,0], grad.flatten()
 
@@ -113,13 +118,14 @@ class Ex5:
         m, n = X.shape
         initial_theta = np.zeros(n)
         solver = 'L-BFGS-B'
-        options = {'maxiter': 200, 'disp': False}
+        options = {'maxiter': 1000, 'disp': False}
         res = minimize(fun=self.linear_reg_cost_function,
                        x0=initial_theta,
                        jac=True,
                        args=(X, y.flatten(), reg),
                        method=solver,
                        options=options)
+
         return res.x
 
     @print_name
@@ -160,11 +166,22 @@ class Ex5:
     # @pause_after
     def feature_mapping_and_polynomial_regression(self):
         p = 8
-        X_poly = self.poly_features(self.X, p)
-        X_poly, mu, sigma = self.feature_normalization(X_poly)
-        X_poly = np.hstack((np.ones((X_poly.shape[0], 1)), X_poly))
+        # Map X onto polynomial features and normalize
+        self.X_poly = self.poly_features(self.X, p)
+        self.X_poly, self.mu, self.sigma = self.feature_normalization(self.X_poly)
+        self.X_poly = np.hstack((np.ones((self.X_poly.shape[0], 1)), self.X_poly))
         print("Normalized Training Example 1:")
-        [print("{:7.4f}".format(i)) for i in X_poly[0, :]]
+        [print("{:7.4f}".format(i)) for i in self.X_poly[0, :]]
+
+        # Map X_poly_test and normalize (using mu and sigma)
+        self.X_poly_test = self.poly_features(self.Xtest, p)
+        self.X_poly_test = self.feature_normalization(self.X_poly_test, self.mu, self.sigma)[0]
+        self.X_poly_test = np.hstack((np.ones((self.X_poly_test.shape[0], 1)), self.X_poly_test))
+
+        # Map X_poly_val and normalize (using mu and sigma)
+        self.X_poly_val = self.poly_features(self.Xval, p)
+        self.X_poly_val = self.feature_normalization(self.X_poly_val, self.mu, self.sigma)[0]
+        self.X_poly_val = np.hstack((np.ones((self.X_poly_val.shape[0], 1)), self.X_poly_val))
 
     def poly_features(self, X, p):
         X_poly = X
@@ -172,13 +189,81 @@ class Ex5:
             X_poly = np.hstack((X_poly, X**(i + 1)))
         return X_poly
 
-    def feature_normalization(self, X):
-        mu = np.broadcast_to(np.mean(X, 0), X.shape)
-        print(mu[0])
-        sigma = np.broadcast_to(np.std(X, 0, ddof=1), X.shape)
-        print(sigma[0])
+    def feature_normalization(self, X, mu=None, sigma=None):
+        if mu is None:
+            mu = np.mean(X, 0)
+        mu = np.broadcast_to(mu, X.shape)
+        if sigma is None:
+            sigma = np.std(X, 0, ddof=1)
+        sigma = np.broadcast_to(sigma, X.shape)
         X_norm = (X - mu) / sigma
         return X_norm, mu[0], sigma[0]
+
+    @print_name
+    # @pause_after
+    def learning_curve_for_polynomial_regression(self):
+        p = 8
+        reg = 3
+        theta = self.train_linear_reg(self.X_poly, self.y, reg)
+        x = np.arange(min(self.X) - 15, max(self.X) + 25, 0.5)[:, np.newaxis]
+        X = self.poly_features(x, p)
+        X = self.feature_normalization(X, self.mu, self.sigma)[0]
+        X = np.hstack((np.ones((X.shape[0], 1)), X))
+
+        # Plot training and fit data
+        fig, ax = plt.subplots()
+        ax.plot(self.X, self.y, 'rx', markersize=10, linewidth=1.5)
+        ax.plot(x, X @ theta, '-', linewidth=2)
+        ax.set_title("Polynomial Regression Fit (lambda = {})".format(reg))
+        ax.set_xlabel("Change in water level (x)")
+        ax.set_ylabel("Water flowing out of the dam (y)")
+        fig.savefig("ex5-data/polynomial_regression_plot.png")
+
+        m = self.X_poly.shape[0]
+        error_train, error_val = self.learning_curve(self.X_poly, self.y, self.X_poly_val, self.yval, reg)
+        fig, ax = plt.subplots()
+        ax.plot(np.arange(1, m + 1), error_train, label='Train')
+        ax.plot(np.arange(1, m + 1), error_val, label='Cross Validation')
+        ax.set_xlim(0, 13)
+        ax.set_ylim(0, 100)
+        ax.legend()
+        ax.set_title('Polynomial Regression Learning Curve (lambda = {})'.format(reg))
+        ax.set_xlabel('Number of training examples')
+        ax.set_ylabel('Error')
+        fig.savefig("ex5-data/poly_learning_curve.png")
+
+        print("# Training Examples | Train Error | Cross Validation Error")
+        for i in range(m):
+            print("{:10} {:20.4f} {:20.4f}".format(i + 1, error_train[i], error_val[i]))
+
+    @print_name
+    # @pause_after
+    def validation_for_selecting_lambda(self):
+        reg_vec, error_train, error_val = self.validation_curve(self.X_poly, self.y, self.X_poly_val, self.yval)
+
+        fig, ax = plt.subplots()
+        ax.plot(reg_vec, error_train, label='Train')
+        ax.plot(reg_vec, error_val, label='Cross Validation')
+        ax.legend()
+        ax.set_xlabel('lambda')
+        ax.set_ylabel('Error')
+        fig.savefig("ex5-data/lambda_validation_error.png")
+
+        print("# Training Examples | Train Error | Cross Validation Error")
+        for i in range(len(reg_vec)):
+            print("{:10.3f} {:20.4f} {:20.4f}".format(reg_vec[i], error_train[i], error_val[i]))
+
+    def validation_curve(self, X, y, Xval, yval):
+        reg_vec = np.array([0, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10])
+        error_train = np.zeros(len(reg_vec))
+        error_val = np.zeros(len(reg_vec))
+
+        for i in range(len(reg_vec)):
+            reg = reg_vec[i]
+            theta = self.train_linear_reg(X, y, reg)
+            error_train[i] = self.linear_reg_cost_function(theta, X, y, 0)[0]
+            error_val[i] = self.linear_reg_cost_function(theta, Xval, yval, 0)[0]
+        return reg_vec, error_train, error_val
 
 
 if __name__ == '__main__':
