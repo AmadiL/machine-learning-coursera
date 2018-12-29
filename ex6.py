@@ -126,6 +126,8 @@ class Ex6:
         ax.set_ylabel("x2")
         fig.savefig("ex6-data/plot_data2.png")
 
+    @print_name
+    # @pause_after
     def training_svm_with_rbf_kernel(self):
         C = 1
         sigma = 0.1
@@ -156,6 +158,8 @@ class Ex6:
         ax.set_ylabel("x2")
         fig.savefig("ex6-data/decision_boundary{}.png".format(num))
 
+    @print_name
+    # @pause_after
     def visualizing_dataset_3(self):
         self.data = sio.loadmat("ex6-data/ex6data3.mat")
         self.X = self.data['X']
@@ -175,6 +179,8 @@ class Ex6:
         ax.set_ylabel("x2")
         fig.savefig("ex6-data/plot_data3.png")
 
+    @print_name
+    # @pause_after
     def training_svm_with_rbf_kernel_dataset_3(self):
         C, sigma = self.cross_validation(self.X, self.y, self.Xval, self.yval)
         gamma = 1 / (2 * sigma ** 2)
